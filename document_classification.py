@@ -1,47 +1,42 @@
 import sys
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import make_pipeline
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import SGDClassifier
 
-# Step 1: Read and preprocess the training data
-training_data = []
-training_labels = []
+# Load in training data
 
-# Ensure that the 'trainingdata.txt' file is in the same directory as this script
-with open('trainingdata.txt', 'r') as file:
-    num_lines = int(file.readline().strip())
-    for _ in range(num_lines):
-        line = file.readline().strip()
-        category, document = line.split(' ', 1)
-        training_data.append(document)
-        training_labels.append(category)
+fname = 'trainingdata.txt'
 
-# Convert labels to integers
-training_labels = np.array(training_labels, dtype=int)
+targets = []
+data = []
 
-# Step 2: Extract features from the text documents
-# Using TfidfVectorizer to convert text into numerical features
-vectorizer = TfidfVectorizer()
+with open(fname) as f:
+    for line in f:
+        targets.append(line[0])
+        data.append(line[2:].strip())
 
-# Step 3: Train a classifier
-# Using Naive Bayes classifier
-classifier = MultinomialNB()
-model = make_pipeline(vectorizer, classifier)
+# Train the classifier
 
-# Train the model
-model.fit(training_data, training_labels)
+textClf = Pipeline([('vect', CountVectorizer(max_df=0.85)),
+                    ('tfidf', TfidfTransformer()),
+                    ('clf', SGDClassifier()),])
+textClf.fit(data, targets)
 
-# Step 4: Read input documents from standard input
-input_documents = []
-input_lines = int(sys.stdin.readline().strip())
-for _ in range(input_lines):
-    document = sys.stdin.readline().strip()
-    input_documents.append(document)
+# Load in test data
 
-# Classify the new documents
-predicted_categories = model.predict(input_documents)
 
-# Output the predicted categories
-for category in predicted_categories:
-    print(category)
+input = sys.stdin.read
+input_data = input().split('\n')
+
+n = int(input_data[0].strip())
+docs = input_data[1:n+1]
+
+# Predict
+
+predicted = textClf.predict(docs)
+
+# Output in hackerrank format
+
+for pred in predicted:
+    print(pred)
